@@ -1,8 +1,8 @@
 ﻿namespace MiniExcelLibs
 {
-    using MiniExcelLibs.OpenXml;
-    using MiniExcelLibs.Utils;
-    using MiniExcelLibs.Zip;
+    using OpenXml;
+    using Utils;
+    using Zip;
     using System;
     using System.Collections;
     using System.Collections.Generic;
@@ -10,7 +10,6 @@
     using System.Dynamic;
     using System.IO;
     using System.Linq;
-    using System.Threading.Tasks;
 
     public static partial class MiniExcel
     {
@@ -131,6 +130,26 @@
             ExcelTemplateFactory.GetProvider(stream, configuration).SaveAsByTemplate(templateBytes, value);
         }
 
+        #region MergeCells
+
+        public static void MergeSameCells(string mergedFilePath, string path, ExcelType excelType = ExcelType.XLSX, IConfiguration configuration = null)
+        {
+            using (var stream = File.Create(mergedFilePath))
+                MergeSameCells(stream, path, excelType, configuration);
+        }
+
+        public static void MergeSameCells(this Stream stream, string path, ExcelType excelType = ExcelType.XLSX, IConfiguration configuration = null)
+        {
+            ExcelTemplateFactory.GetProvider(stream, configuration, excelType).MergeSameCells(path);
+        }
+
+        public static void MergeSameCells(this Stream stream, byte[] filePath, ExcelType excelType = ExcelType.XLSX, IConfiguration configuration = null)
+        {
+            ExcelTemplateFactory.GetProvider(stream, configuration, excelType).MergeSameCells(filePath);
+        }
+        
+        #endregion
+
         /// <summary>
         /// QueryAsDataTable is not recommended, because it'll load all data into memory.
         /// </summary>
@@ -146,7 +165,7 @@
         public static DataTable QueryAsDataTable(this Stream stream, bool useHeaderRow = true, string sheetName = null, ExcelType excelType = ExcelType.UNKNOWN, string startCell = "A1", IConfiguration configuration = null)
         {
             if (sheetName == null && excelType != ExcelType.CSV) /*Issue #279*/
-                sheetName = stream.GetSheetNames().First();
+                sheetName = stream.GetSheetNames(configuration as OpenXmlConfiguration).First();
 
             var dt = new DataTable(sheetName);
             var first = true;
@@ -184,16 +203,18 @@
             return dt;
         }
 
-        public static List<string> GetSheetNames(string path)
+        public static List<string> GetSheetNames(string path, OpenXmlConfiguration config = null)
         {
             using (var stream = FileHelper.OpenSharedRead(path))
-                return GetSheetNames(stream);
+                return GetSheetNames(stream, config);
         }
 
-        public static List<string> GetSheetNames(this Stream stream)
+        public static List<string> GetSheetNames(this Stream stream, OpenXmlConfiguration config = null)
         {
+            config = config ?? OpenXmlConfiguration.DefaultConfig;
+
             var archive = new ExcelOpenXmlZip(stream);
-            return new ExcelOpenXmlSheetReader(stream, null).GetWorkbookRels(archive.entries).Select(s => s.Name).ToList();
+            return new ExcelOpenXmlSheetReader(stream, config).GetWorkbookRels(archive.entries).Select(s => s.Name).ToList();
         }
 
         public static ICollection<string> GetColumns(string path, bool useHeaderRow = false, string sheetName = null, ExcelType excelType = ExcelType.UNKNOWN, string startCell = "A1", IConfiguration configuration = null)

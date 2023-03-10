@@ -25,6 +25,13 @@
 
 ---
 
+### 1.30.2
+- [New] 支持 grouped rows (via @eynarhaji)
+- [New] 支持 automatic merge vertical cells (via @eynarhaji)
+
+### 1.30.1
+- [New] 支持 function 自定义 separator (via @hyzx86)
+- [New] 支持 config for get sheet names (via @H4ad)
 
 ### 1.30.0
 - [New] 移除不支持的 .NET 5.0 支持
